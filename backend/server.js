@@ -1,0 +1,248 @@
+const express = require("express");
+const cors = require("cors");
+const upload = require("./multer");
+const connectDB = require("./index");
+const Class = require("./models/Class");
+const TestModel = require("./models/Test");
+const BookModel = require("./models/Book");
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+app.use("/uploads", express.static("uploads"));
+
+// ✅ POST
+app.post("/addClass", upload.single("image"), async (req, res) => {
+  try {
+
+    console.log("BODY:", req.body);   // 👈 check
+    console.log("FILE:", req.file);   // 👈 check
+
+    const newClass = new Class({
+      className: req.body.className,
+      imgUrl: req.file ? req.file.filename : "",
+      educator: req.body.educator,
+      subject: req.body.subject,
+      appName: req.body.appName,
+      books: req.body.books,
+      offer: req.body.offer,
+      appLink: req.body.appLink,
+      yt: req.body.yt,
+      tg: req.body.tg,
+      wa: req.body.wa,
+      ig: req.body.ig,
+      io: req.body.io,
+      wb: req.body.wb
+
+    });
+
+    await newClass.save();
+
+    console.log("DATA SAVED ✅");
+
+    res.json({ message: "Saved Successfully" });
+
+  } catch (err) {
+    console.log("SAVE ERROR:", err);
+    res.status(500).json({ message: "Error saving data" });
+  }
+});
+
+// ✅ GET
+app.get("/getClasses", async (req, res) => {
+  const data = await Class.find();
+  res.json(data);
+});
+app.get("/getTests", async (req, res) => {
+  try {
+    const data = await TestModel.find();
+    res.json(data);
+  } catch (err) {
+    console.log("🔥 ERROR:", err);
+    res.status(500).json({ message: "Error fetching tests" });
+  }
+});
+app.get("/getBooks", async (req, res) => {
+  try {
+    const data = await BookModel.find();
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching books" });
+  }
+});
+
+// ✅ DELETE (🔥 IMPORTANT)
+app.delete("/deleteClass/:id", async (req, res) => {
+  try {
+    console.log("DELETE ID:", req.params.id);
+
+    const deleted = await Class.findByIdAndDelete(req.params.id);
+
+    console.log("DELETED:", deleted);
+
+    res.json({ message: "Deleted Successfully" });
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Error" });
+  }
+});
+
+// 🚀 START
+connectDB().then(() => {
+  app.listen(5000, () => {
+    console.log("Server running on 5000");
+  });
+});
+
+
+app.put("/updateClass/:id", upload.single("image"), async (req, res) => {
+  try {
+
+    const updateData = {
+      className: req.body.className,
+      educator: req.body.educator,
+      appName: req.body.appName,
+      books: req.body.books,
+      offer: req.body.offer,
+      appLink: req.body.appLink,
+      yt: req.body.yt,
+      tg: req.body.tg,
+      wa: req.body.wa,
+      ig: req.body.ig,
+      io: req.body.io,
+      wb: req.body.wb
+
+    };
+
+    // 👇 image optional
+    if(req.file){
+      updateData.imgUrl = req.file.filename;
+    }
+
+    await Class.findByIdAndUpdate(req.params.id, updateData);
+
+    res.json({ message: "Updated Successfully" });
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Error updating" });
+  }
+});
+
+
+app.put("/updateLink/:id", async (req, res) => {
+  const { field, value } = req.body;
+
+  try {
+    await ClassModel.findByIdAndUpdate(req.params.id, {
+      [field]: value
+    });
+
+    res.json({ message: "Updated" });
+  } catch (err) {
+    res.status(500).json({ error: err });
+  }
+});
+
+
+//Test
+
+// ✅ ADD TEST
+app.post("/addTest", upload.single("image"), async (req, res) => {
+  try {
+
+    const newTest = new TestModel({
+      className: req.body.className,
+      imgUrl: req.file ? req.file.filename : "",
+      exam: req.body.exam,
+      subject: req.body.subject,
+      appName: req.body.appName,
+      offer: req.body.offer,
+      call: req.body.call,
+      appLink: req.body.appLink,
+      yt: req.body.yt,
+      tg: req.body.tg,
+      wa: req.body.wa,
+      ig: req.body.ig,
+      io: req.body.io,
+      wb: req.body.wb
+    });
+
+    await newTest.save();
+
+    res.json({ message: "Test Saved ✅" });
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Error saving test" });
+  }
+});
+
+
+// ✅ DELETE TEST
+app.delete("/deleteTest/:id", async (req, res) => {
+  await TestModel.findByIdAndDelete(req.params.id);
+  res.json({ message: "Deleted ✅" });
+});
+
+
+// ✅ UPDATE TEST
+app.put("/updateTest/:id", upload.single("image"), async (req, res) => {
+
+  const updateData = {
+    className: req.body.className,
+    exam: req.body.exam,
+    subject: req.body.subject,
+    appName: req.body.appName,
+    offer: req.body.offer,
+    call: req.body.call,
+    appLink: req.body.appLink,
+    yt: req.body.yt,
+    tg: req.body.tg,
+    wa: req.body.wa,
+    ig: req.body.ig,
+    io: req.body.io,
+    wb: req.body.wb
+  };
+
+  if(req.file){
+    updateData.imgUrl = req.file.filename;
+  }
+
+  await TestModel.findByIdAndUpdate(req.params.id, updateData);
+
+  res.json({ message: "Updated ✅" });
+});
+
+
+app.post("/addBook", upload.single("image"), async (req, res) => {
+  try {
+
+    const newBook = new BookModel({
+      className: req.body.className,
+      imgUrl: req.file ? req.file.filename : "",
+      educator: req.body.educator,
+      bookName: req.body.bookName,
+      price: req.body.price,
+      rating: req.body.rating,
+      bookLink: req.body.bookLink,
+    
+      // 🔥 NEW
+      call: req.body.call,
+      yt: req.body.yt,
+      tg: req.body.tg,
+      wa: req.body.wa,
+      ig: req.body.ig,
+      io: req.body.io
+    });
+
+    await newBook.save();
+
+    res.json({ message: "Book Saved ✅" });
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Error saving book" });
+  }
+});
