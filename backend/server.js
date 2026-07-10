@@ -12,7 +12,7 @@ app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
 // ✅ POST
-app.post("/addClass", upload.single("image"), async (req, res) => {
+/*app.post("/addClass", upload.single("image"), async (req, res) => {
   try {
 
     console.log("BODY:", req.body);   // 👈 check
@@ -22,6 +22,7 @@ app.post("/addClass", upload.single("image"), async (req, res) => {
       className: req.body.className,
       imgUrl: req.file ? req.file.filename : "",
       educator: req.body.educator,
+      exam: req.body.exam,
       subject: req.body.subject,
       appName: req.body.appName,
       books: req.body.books,
@@ -46,7 +47,39 @@ app.post("/addClass", upload.single("image"), async (req, res) => {
     console.log("SAVE ERROR:", err);
     res.status(500).json({ message: "Error saving data" });
   }
+});*/
+
+// ✅ POST (Class)
+app.post("/addClass", upload.single("image"), async (req, res) => {
+  try {
+    const newClass = new Class({
+      className: req.body.className,
+      // 🌟 बदल: filename ऐवजी path वापरा
+      imgUrl: req.file ? req.file.path : "", 
+      educator: req.body.educator,
+      exam: req.body.exam,
+      subject: req.body.subject,
+      appName: req.body.appName,
+      books: req.body.books,
+      offer: req.body.offer,
+      appLink: req.body.appLink,
+      demoVideo: extractYoutubeVideoId(req.body.demoVideo),
+      yt: req.body.yt,
+      tg: req.body.tg,
+      wa: req.body.wa,
+      ig: req.body.ig,
+      io: req.body.io,
+      wb: req.body.wb
+    });
+
+    await newClass.save();
+    res.json({ message: "Saved Successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Error saving data" });
+  }
 });
+
+
 
 // ✅ GET
 app.get("/getClasses", async (req, res) => {
@@ -70,6 +103,8 @@ app.get("/getBooks", async (req, res) => {
     res.status(500).json({ message: "Error fetching books" });
   }
 });
+
+
 
 // ✅ DELETE (🔥 IMPORTANT)
 app.delete("/deleteClass/:id", async (req, res) => {
@@ -95,7 +130,7 @@ connectDB().then(() => {
   });
 });
 
-
+/*
 app.put("/updateClass/:id", upload.single("image"), async (req, res) => {
   try {
 
@@ -126,6 +161,37 @@ app.put("/updateClass/:id", upload.single("image"), async (req, res) => {
 
   } catch (err) {
     console.log(err);
+    res.status(500).json({ message: "Error updating" });
+  }
+});
+*/
+
+app.put("/updateClass/:id", upload.single("image"), async (req, res) => {
+  try {
+    const updateData = {
+      className: req.body.className,
+      educator: req.body.educator,
+      appName: req.body.appName,
+      books: req.body.books,
+      offer: req.body.offer,
+      appLink: req.body.appLink,
+      demoVideo: extractYoutubeVideoId(req.body.demoVideo),
+      yt: req.body.yt,
+      tg: req.body.tg,
+      wa: req.body.wa,
+      ig: req.body.ig,
+      io: req.body.io,
+      wb: req.body.wb
+    };
+
+    // 🌟 बदल: इमेजेस अपडेट करताना path वापरा
+    if(req.file){
+      updateData.imgUrl = req.file.path; 
+    }
+
+    await Class.findByIdAndUpdate(req.params.id, updateData);
+    res.json({ message: "Updated Successfully" });
+  } catch (err) {
     res.status(500).json({ message: "Error updating" });
   }
 });
