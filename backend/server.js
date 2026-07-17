@@ -7,12 +7,36 @@ const TestModel = require("./models/Test");
 const BookModel = require("./models/Book");
 const app = express();
 
+
+
+
 app.use(cors());
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
+
+//youtube video condation
+function extractYoutubeVideoId(url) {
+
+  if (!url) return "";
+
+  // https://www.youtube.com/watch?v=xxxx
+  let match = url.match(/[?&]v=([^&]+)/);
+  if (match) return match[1];
+
+  // https://youtu.be/xxxx
+  match = url.match(/youtu\.be\/([^?&]+)/);
+  if (match) return match[1];
+
+  // https://www.youtube.com/live/xxxx
+  match = url.match(/live\/([^?&]+)/);
+  if (match) return match[1];
+
+  return url; // जर आधीच Video ID असेल
+}
+/*
 // ✅ POST
-/*app.post("/addClass", upload.single("image"), async (req, res) => {
+app.post("/addClass", upload.single("image"), async (req, res) => {
   try {
 
     console.log("BODY:", req.body);   // 👈 check
@@ -28,6 +52,7 @@ app.use("/uploads", express.static("uploads"));
       books: req.body.books,
       offer: req.body.offer,
       appLink: req.body.appLink,
+      demoVideo: extractYoutubeVideoId(req.body.demoVideo),
       yt: req.body.yt,
       tg: req.body.tg,
       wa: req.body.wa,
@@ -47,15 +72,24 @@ app.use("/uploads", express.static("uploads"));
     console.log("SAVE ERROR:", err);
     res.status(500).json({ message: "Error saving data" });
   }
-});*/
-
+});
+*/
+//console.log(req.files);
 // ✅ POST (Class)
-app.post("/addClass", upload.single("image"), async (req, res) => {
+app.post("/addClass", upload.fields([{ name: "image", maxCount: 1 },{ name: "image2", maxCount: 1 }]), async (req, res) => {
   try {
     const newClass = new Class({
       className: req.body.className,
       // 🌟 बदल: filename ऐवजी path वापरा
-      imgUrl: req.file ? req.file.path : "", 
+      //imgUrl: req.file ? req.file.path : "",
+      imgUrl: req.files.image
+      ? req.files.image[0].path
+      : "",
+    
+     imgUrl2: req.files.image2
+      ? req.files.image2[0].path
+      : "",
+
       educator: req.body.educator,
       exam: req.body.exam,
       subject: req.body.subject,
@@ -221,6 +255,7 @@ app.post("/addTest", upload.single("image"), async (req, res) => {
     const newTest = new TestModel({
       className: req.body.className,
       imgUrl: req.file ? req.file.filename : "",
+      imgUrl2: req.file ? req.file.filename : "",
       exam: req.body.exam,
       subject: req.body.subject,
       appName: req.body.appName,
