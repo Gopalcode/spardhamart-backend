@@ -5,6 +5,7 @@ const connectDB = require("./index");
 const Class = require("./models/Class");
 const TestModel = require("./models/Test");
 const BookModel = require("./models/Book");
+const Analytics = require("./models/Analytics");
 const app = express();
 
 app.use(cors());
@@ -169,6 +170,101 @@ app.get("/getBooks", async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: "Error fetching books" });
   }
+});
+
+// ======================================================
+// ANALYTICS - SAVE CLICK
+// ======================================================
+
+app.post("/analytics/click", async (req, res) => {
+
+  try {
+
+      const {
+          classId,
+          className,
+          educator,
+          exam,
+          subject,
+          clickType
+      } = req.body;
+
+
+      // Basic validation
+      if (!clickType) {
+
+          return res.status(400).json({
+
+              success: false,
+
+              message: "clickType is required"
+
+          });
+
+      }
+
+
+      // Save analytics
+      const newClick = new Analytics({
+
+          classId:
+              classId || undefined,
+
+          className:
+              className || "",
+
+          educator:
+              educator || "",
+
+          exam:
+              exam || "",
+
+          subject:
+              subject || "",
+
+          clickType:
+              clickType
+
+      });
+
+
+      await newClick.save();
+
+
+      console.log(
+          "📊 CLICK SAVED:",
+          clickType,
+          className
+      );
+
+
+      res.status(200).json({
+
+          success: true,
+
+          message: "Click tracked successfully"
+
+      });
+
+
+  } catch (error) {
+
+      console.error(
+          "❌ ANALYTICS ERROR:",
+          error
+      );
+
+
+      res.status(500).json({
+
+          success: false,
+
+          message: "Analytics save failed"
+
+      });
+
+  }
+
 });
 
 // ✅ DELETE (🔥 IMPORTANT)
@@ -345,4 +441,80 @@ app.post("/addBook", upload.single("image"), async (req, res) => {
     console.log(err);
     res.status(500).json({ message: "Error saving book" });
   }
+});
+
+// ======================================================
+// ANALYTICS - TOTAL CLICKS
+// ======================================================
+
+app.get("/analytics/total", async (req, res) => {
+
+  try {
+
+      const total =
+          await Analytics.countDocuments();
+
+
+      res.json({
+
+          success: true,
+
+          total: total
+
+      });
+
+
+  } catch (error) {
+
+      console.error(error);
+
+      res.status(500).json({
+
+          success: false,
+
+          message: "Failed to get total clicks"
+
+      });
+
+  }
+
+});
+
+
+// ======================================================
+// ANALYTICS - ALL DATA
+// ======================================================
+
+app.get("/analytics", async (req, res) => {
+
+  try {
+
+      const data =
+          await Analytics.find()
+              .sort({ createdAt: -1 });
+
+
+      res.json({
+
+          success: true,
+
+          data: data
+
+      });
+
+
+  } catch (error) {
+
+      console.error(error);
+
+      res.status(500).json({
+
+          success: false,
+
+          message: "Failed to get analytics"
+
+      });
+
+  }
+
 });
