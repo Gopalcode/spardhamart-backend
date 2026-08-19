@@ -518,3 +518,170 @@ app.get("/analytics", async (req, res) => {
   }
 
 });
+
+
+// ======================================================
+// 📊 ANALYTICS - DASHBOARD SUMMARY
+// ======================================================
+
+app.get("/analytics/summary", async (req, res) => {
+
+  try {
+
+    // ==========================================
+    // 1️⃣ MOST CLICKED CLASSES
+    // ==========================================
+
+    const mostClickedClasses =
+      await Analytics.aggregate([
+
+        {
+          $match: {
+            className: {
+              $ne: ""
+            }
+          }
+        },
+
+        {
+          $group: {
+            _id: {
+              className: "$className",
+              educator: "$educator",
+              exam: "$exam",
+              subject: "$subject"
+            },
+
+            clicks: {
+              $sum: 1
+            }
+          }
+        },
+
+        {
+          $sort: {
+            clicks: -1
+          }
+        },
+
+        {
+          $limit: 10
+        }
+
+      ]);
+
+
+    // ==========================================
+    // 2️⃣ CLICKS BY EXAM
+    // ==========================================
+
+    const clicksByExam =
+      await Analytics.aggregate([
+
+        {
+          $match: {
+            exam: {
+              $ne: ""
+            }
+          }
+        },
+
+        {
+          $group: {
+            _id: "$exam",
+
+            clicks: {
+              $sum: 1
+            }
+          }
+        },
+
+        {
+          $sort: {
+            clicks: -1
+          }
+        }
+
+      ]);
+
+
+    // ==========================================
+    // 3️⃣ CLICKS BY SUBJECT
+    // ==========================================
+
+    const clicksBySubject =
+      await Analytics.aggregate([
+
+        {
+          $match: {
+            subject: {
+              $ne: ""
+            }
+          }
+        },
+
+        {
+          $group: {
+            _id: "$subject",
+
+            clicks: {
+              $sum: 1
+            }
+          }
+        },
+
+        {
+          $sort: {
+            clicks: -1
+          }
+        }
+
+      ]);
+
+
+    // ==========================================
+    // TOTAL CLICKS
+    // ==========================================
+
+    const totalClicks =
+      await Analytics.countDocuments();
+
+
+    // ==========================================
+    // RESPONSE
+    // ==========================================
+
+    res.json({
+
+      success: true,
+
+      totalClicks,
+
+      mostClickedClasses,
+
+      clicksByExam,
+
+      clicksBySubject
+
+    });
+
+
+  } catch (error) {
+
+    console.error(
+      "❌ ANALYTICS SUMMARY ERROR:",
+      error
+    );
+
+    res.status(500).json({
+
+      success: false,
+
+      message:
+        "Failed to load analytics summary"
+
+    });
+
+  }
+
+});
