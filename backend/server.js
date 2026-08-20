@@ -207,25 +207,28 @@ app.post("/analytics/click", async (req, res) => {
       // Save analytics
       const newClick = new Analytics({
 
-          classId:
-              classId || undefined,
-
-          className:
-              className || "",
-
-          educator:
-              educator || "",
-
-          exam:
-              exam || "",
-
-          subject:
-              subject || "",
-
-          clickType:
-              clickType
-
-      });
+        classId:
+            classId || undefined,
+    
+        className:
+            className || "",
+    
+        educator:
+            educator || "",
+    
+        exam:
+            exam || "",
+    
+        subject:
+            subject || "",
+    
+        eventType:
+            "click",
+    
+        clickType:
+            clickType
+    
+    });
 
 
       await newClick.save();
@@ -679,6 +682,110 @@ app.get("/analytics/summary", async (req, res) => {
 
       message:
         "Failed to load analytics summary"
+
+    });
+
+  }
+
+});
+
+
+
+// ======================================================
+// ANALYTICS - SAVE CARD VIEW
+// ======================================================
+
+app.post("/analytics/view", async (req, res) => {
+
+  try {
+
+    const {
+      classId,
+      className,
+      educator,
+      exam,
+      subject
+    } = req.body;
+
+
+    // ===============================
+    // BASIC VALIDATION
+    // ===============================
+
+    if (!className) {
+
+      return res.status(400).json({
+
+        success: false,
+
+        message: "className is required"
+
+      });
+
+    }
+
+
+    // ===============================
+    // SAVE CARD VIEW
+    // ===============================
+
+    const newView = new Analytics({
+
+      classId:
+        classId || undefined,
+
+      className:
+        className || "",
+
+      educator:
+        educator || "",
+
+      exam:
+        exam || "",
+
+      subject:
+        subject || "",
+
+      eventType:
+        "view",
+
+      clickType:
+        undefined
+
+    });
+
+
+    await newView.save();
+
+
+    console.log(
+      "👁️ CARD VIEW SAVED:",
+      className
+    );
+
+
+    res.status(200).json({
+
+      success: true,
+
+      message: "Card view tracked successfully"
+
+    });
+
+
+  } catch (error) {
+
+    console.error(
+      "❌ CARD VIEW ERROR:",
+      error
+    );
+
+
+    res.status(500).json({
+
+      success: false,
+
+      message: "Card view tracking failed"
 
     });
 
