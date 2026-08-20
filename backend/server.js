@@ -250,22 +250,25 @@ app.post("/analytics/click", async (req, res) => {
       });
 
 
-  } catch (error) {
+    } catch (error) {
 
-      console.error(
-          "❌ ANALYTICS ERROR:",
-          error
-      );
-
-
+      console.error("=================================");
+      console.error("❌ CARD VIEW ERROR");
+      console.error("MESSAGE:", error.message);
+      console.error("NAME:", error.name);
+      console.error("STACK:", error.stack);
+      console.error("=================================");
+  
       res.status(500).json({
-
+  
           success: false,
-
-          message: "Analytics save failed"
-
+  
+          message: "Card view tracking failed",
+  
+          error: error.message
+  
       });
-
+  
   }
 
 });
