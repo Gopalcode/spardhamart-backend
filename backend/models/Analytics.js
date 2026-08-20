@@ -30,8 +30,17 @@ const analyticsSchema = new mongoose.Schema({
         default: ""
     },
 
-    // कोणत्या button वर click झाला
-    // app / youtube / telegram / whatsapp / ios / website
+    // Analytics event type
+    // click = button/link click
+    // view = card view
+    eventType: {
+        type: String,
+        enum: ["click", "view"],
+        default: "click"
+    },
+
+    // Analytics event type
+    // view / app / youtube / telegram / whatsapp / ios / website
     clickType: {
         type: String,
         required: true
