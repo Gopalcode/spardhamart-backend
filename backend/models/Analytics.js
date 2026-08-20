@@ -43,7 +43,7 @@ const analyticsSchema = new mongoose.Schema({
     // view / app / youtube / telegram / whatsapp / ios / website
     clickType: {
         type: String,
-        required: true
+        required: false
     },
 
     // Click कधी झाला
