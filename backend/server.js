@@ -530,37 +530,91 @@ app.get("/analytics", async (req, res) => {
 // 📊 ANALYTICS - DASHBOARD SUMMARY
 // ======================================================
 
+// ======================================================
+// 📊 ANALYTICS - DASHBOARD SUMMARY
+// REAL MONGODB DATA
+// ======================================================
+
 app.get("/analytics/summary", async (req, res) => {
 
   try {
 
-    // ==========================================
-    // 1️⃣ MOST CLICKED CLASSES
-    // ==========================================
+    // ==================================================
+    // 1️⃣ TOTAL CARD VIEWS
+    // ==================================================
+
+    const totalCardViews =
+      await Analytics.countDocuments({
+        eventType: "view"
+      });
+
+
+    // ==================================================
+    // 2️⃣ TOTAL LINK CLICKS
+    // ==================================================
+
+    const totalLinkClicks =
+      await Analytics.countDocuments({
+        eventType: "click"
+      });
+
+
+    // ==================================================
+    // 3️⃣ CTR
+    // CTR = Link Clicks / Card Views × 100
+    // ==================================================
+
+    let ctr = 0;
+
+    if (totalCardViews > 0) {
+
+      ctr =
+        (totalLinkClicks / totalCardViews) * 100;
+
+    }
+
+
+    ctr = Number(ctr.toFixed(2));
+
+
+    // ==================================================
+    // 4️⃣ MOST CLICKED CLASSES
+    // ==================================================
 
     const mostClickedClasses =
       await Analytics.aggregate([
 
         {
           $match: {
+
+            eventType: "click",
+
             className: {
               $ne: ""
             }
+
           }
         },
 
         {
           $group: {
+
             _id: {
+
               className: "$className",
+
               educator: "$educator",
+
               exam: "$exam",
+
               subject: "$subject"
+
             },
 
             clicks: {
               $sum: 1
             }
+
           }
         },
 
@@ -577,28 +631,34 @@ app.get("/analytics/summary", async (req, res) => {
       ]);
 
 
-    // ==========================================
-    // 2️⃣ CLICKS BY EXAM
-    // ==========================================
+    // ==================================================
+    // 5️⃣ CLICKS BY EXAM
+    // ==================================================
 
     const clicksByExam =
       await Analytics.aggregate([
 
         {
           $match: {
+
+            eventType: "click",
+
             exam: {
               $ne: ""
             }
+
           }
         },
 
         {
           $group: {
+
             _id: "$exam",
 
             clicks: {
               $sum: 1
             }
+
           }
         },
 
@@ -611,28 +671,34 @@ app.get("/analytics/summary", async (req, res) => {
       ]);
 
 
-    // ==========================================
-    // 3️⃣ CLICKS BY SUBJECT
-    // ==========================================
+    // ==================================================
+    // 6️⃣ CLICKS BY SUBJECT
+    // ==================================================
 
     const clicksBySubject =
       await Analytics.aggregate([
 
         {
           $match: {
+
+            eventType: "click",
+
             subject: {
               $ne: ""
             }
+
           }
         },
 
         {
           $group: {
+
             _id: "$subject",
 
             clicks: {
               $sum: 1
             }
+
           }
         },
 
@@ -640,34 +706,45 @@ app.get("/analytics/summary", async (req, res) => {
           $sort: {
             clicks: -1
           }
+
         }
 
       ]);
 
 
-    // ==========================================
-    // TOTAL CLICKS
-    // ==========================================
-
-    const totalClicks =
-      await Analytics.countDocuments();
-
-
-    // ==========================================
-    // RESPONSE
-    // ==========================================
+    // ==================================================
+    // 7️⃣ RESPONSE
+    // ==================================================
 
     res.json({
 
       success: true,
 
-      totalClicks,
+      totalCardViews:
 
-      mostClickedClasses,
+        totalCardViews,
 
-      clicksByExam,
+      totalLinkClicks:
 
-      clicksBySubject
+        totalLinkClicks,
+
+      ctr:
+
+        ctr,
+
+      // Existing analytics
+
+      mostClickedClasses:
+
+        mostClickedClasses,
+
+      clicksByExam:
+
+        clicksByExam,
+
+      clicksBySubject:
+
+        clicksBySubject
 
     });
 
@@ -679,12 +756,16 @@ app.get("/analytics/summary", async (req, res) => {
       error
     );
 
+
     res.status(500).json({
 
       success: false,
 
       message:
-        "Failed to load analytics summary"
+        "Failed to load analytics summary",
+
+      error:
+        error.message
 
     });
 
