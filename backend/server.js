@@ -577,58 +577,103 @@ app.get("/analytics/summary", async (req, res) => {
     ctr = Number(ctr.toFixed(2));
 
 
-    // ==================================================
-    // 4️⃣ MOST CLICKED CLASSES
-    // ==================================================
+// ==========================================
+// 1️⃣ CLASS-WISE VIEWS + CLICKS + CTR
+// ==========================================
 
-    const mostClickedClasses =
-      await Analytics.aggregate([
+const classAnalytics =
+  await Analytics.aggregate([
 
-        {
-          $match: {
+    {
+      $match: {
+        className: {
+          $ne: ""
+        }
+      }
+    },
 
-            eventType: "click",
+    {
+      $group: {
+        _id: {
+          className: "$className",
+          educator: "$educator",
+          exam: "$exam",
+          subject: "$subject"
+        },
 
-            className: {
-              $ne: ""
-            }
-
+        views: {
+          $sum: {
+            $cond: [
+              {
+                $eq: ["$eventType", "view"]
+              },
+              1,
+              0
+            ]
           }
         },
 
-        {
-          $group: {
-
-            _id: {
-
-              className: "$className",
-
-              educator: "$educator",
-
-              exam: "$exam",
-
-              subject: "$subject"
-
-            },
-
-            clicks: {
-              $sum: 1
-            }
-
+        clicks: {
+          $sum: {
+            $cond: [
+              {
+                $eq: ["$eventType", "click"]
+              },
+              1,
+              0
+            ]
           }
-        },
-
-        {
-          $sort: {
-            clicks: -1
-          }
-        },
-
-        {
-          $limit: 10
         }
 
-      ]);
+      }
+
+    },
+
+    {
+      $addFields: {
+
+        ctr: {
+
+          $cond: [
+
+            {
+              $gt: ["$views", 0]
+            },
+
+            {
+              $multiply: [
+                {
+                  $divide: [
+                    "$clicks",
+                    "$views"
+                  ]
+                },
+                100
+              ]
+            },
+
+            0
+
+          ]
+
+        }
+
+      }
+
+    },
+
+    {
+      $sort: {
+        clicks: -1,
+        views: -1
+      }
+    },
+
+    {
+      $limit: 10
+    }
+
+  ]);
 
 
     // ==================================================
@@ -736,7 +781,7 @@ app.get("/analytics/summary", async (req, res) => {
 
       mostClickedClasses:
 
-        mostClickedClasses,
+      classAnalytics,
 
       clicksByExam:
 
