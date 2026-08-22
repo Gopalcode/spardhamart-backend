@@ -757,6 +757,152 @@ app.get("/analytics/summary", async (req, res) => {
 
       ]);
 
+// ======================================================
+// 📊 CLASS-WISE VIEWS + CLICKS + CTR
+// ======================================================
+
+const classAnalytics =
+  await Analytics.aggregate([
+
+    // ------------------------------------------
+    // GROUP BY CLASS + EVENT TYPE
+    // ------------------------------------------
+
+    {
+      $group: {
+
+        _id: {
+          classId: "$classId",
+          className: "$className",
+          educator: "$educator",
+          eventType: "$eventType"
+        },
+
+        count: {
+          $sum: 1
+        }
+
+      }
+    },
+
+
+    // ------------------------------------------
+    // GROUP AGAIN BY CLASS
+    // ------------------------------------------
+
+    {
+      $group: {
+
+        _id: {
+          classId: "$_id.classId",
+          className: "$_id.className",
+          educator: "$_id.educator"
+        },
+
+        views: {
+          $sum: {
+            $cond: [
+              {
+                $eq: [
+                  "$_id.eventType",
+                  "card_view"
+                ]
+              },
+              "$count",
+              0
+            ]
+          }
+        },
+
+        clicks: {
+          $sum: {
+            $cond: [
+              {
+                $eq: [
+                  "$_id.eventType",
+                  "click"
+                ]
+              },
+              "$count",
+              0
+            ]
+          }
+        }
+
+      }
+
+    },
+
+
+    // ------------------------------------------
+    // CTR
+    // ------------------------------------------
+
+    {
+      $addFields: {
+
+        ctr: {
+
+          $cond: [
+
+            {
+              $gt: [
+                "$views",
+                0
+              ]
+            },
+
+            {
+              $round: [
+
+                {
+                  $multiply: [
+
+                    {
+                      $divide: [
+                        "$clicks",
+                        "$views"
+                      ]
+                    },
+
+                    100
+
+                  ]
+
+                },
+
+                2
+
+              ]
+
+            },
+
+            0
+
+          ]
+
+        }
+
+      }
+
+    },
+
+
+    // ------------------------------------------
+    // MOST VIEWED / CLICKED FIRST
+    // ------------------------------------------
+
+    {
+      $sort: {
+
+        views: -1,
+        clicks: -1
+
+      }
+
+    }
+
+  ]);
 
     // ==================================================
     // 8️⃣ CONVERT DAILY DATA
