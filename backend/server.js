@@ -554,7 +554,8 @@ app.get("/analytics/summary", async (req, res) => {
           $match: {
             className: {
               $ne: ""
-            }
+            },
+            eventType: "click"
           }
         },
 
@@ -670,12 +671,14 @@ app.get("/analytics/summary", async (req, res) => {
 
     // ==================================================
     // 4️⃣ TOTAL CARD VIEWS
+    // IMPORTANT:
+    // /analytics/view मध्ये eventType = "view"
     // ==================================================
 
     const totalCardViews =
       await Analytics.countDocuments({
 
-        eventType: "card_view"
+        eventType: "view"
 
       });
 
@@ -715,10 +718,6 @@ app.get("/analytics/summary", async (req, res) => {
     const dailyAnalytics =
       await Analytics.aggregate([
 
-        // ----------------------------------------------
-        // DATE FORMAT
-        // ----------------------------------------------
-
         {
           $group: {
 
@@ -726,9 +725,13 @@ app.get("/analytics/summary", async (req, res) => {
 
               date: {
                 $dateToString: {
+
                   format: "%Y-%m-%d",
+
                   date: "$createdAt"
+
                 }
+
               },
 
               eventType: "$eventType"
@@ -743,15 +746,13 @@ app.get("/analytics/summary", async (req, res) => {
 
         },
 
-
-        // ----------------------------------------------
-        // SORT DATE
-        // ----------------------------------------------
-
         {
           $sort: {
+
             "_id.date": 1
+
           }
+
         }
 
       ]);
@@ -759,13 +760,6 @@ app.get("/analytics/summary", async (req, res) => {
 
     // ==================================================
     // 8️⃣ CONVERT DAILY DATA
-    // INTO:
-    //
-    // {
-    //   date,
-    //   views,
-    //   clicks
-    // }
     // ==================================================
 
     const dailyMap = {};
@@ -796,9 +790,13 @@ app.get("/analytics/summary", async (req, res) => {
       }
 
 
-      // CARD VIEW
+      // ==============================================
+      // 👁️ CARD VIEWS
+      // IMPORTANT: eventType = "view"
+      // ==============================================
+
       if (
-        eventType === "card_view"
+        eventType === "view"
       ) {
 
         dailyMap[date].views +=
@@ -807,7 +805,10 @@ app.get("/analytics/summary", async (req, res) => {
       }
 
 
-      // LINK CLICK
+      // ==============================================
+      // 🔗 LINK CLICKS
+      // ==============================================
+
       if (
         eventType === "click"
       ) {
@@ -849,17 +850,7 @@ app.get("/analytics/summary", async (req, res) => {
 
       success: true,
 
-
-      // ----------------------------------------------
-      // OLD / EXISTING
-      // ----------------------------------------------
-
       totalClicks,
-
-
-      // ----------------------------------------------
-      // REAL STAT CARDS
-      // ----------------------------------------------
 
       totalCardViews,
 
@@ -867,22 +858,11 @@ app.get("/analytics/summary", async (req, res) => {
 
       ctr,
 
-
-      // ----------------------------------------------
-      // EXISTING ANALYTICS
-      // ----------------------------------------------
-
       mostClickedClasses,
 
       clicksByExam,
 
       clicksBySubject,
-
-
-      // ----------------------------------------------
-      // NEW
-      // VIEWS VS CLICKS OVER TIME
-      // ----------------------------------------------
 
       dailyAnalytics:
         dailyAnalyticsFormatted
@@ -907,109 +887,6 @@ app.get("/analytics/summary", async (req, res) => {
 
       error:
         error.message
-
-    });
-
-  }
-
-});
-
-
-// ======================================================
-// ANALYTICS - SAVE CARD VIEW
-// ======================================================
-
-app.post("/analytics/view", async (req, res) => {
-
-  try {
-
-    const {
-      classId,
-      className,
-      educator,
-      exam,
-      subject
-    } = req.body;
-
-
-    // ===============================
-    // BASIC VALIDATION
-    // ===============================
-
-    if (!className) {
-
-      return res.status(400).json({
-
-        success: false,
-
-        message: "className is required"
-
-      });
-
-    }
-
-
-    // ===============================
-    // SAVE CARD VIEW
-    // ===============================
-
-    const newView = new Analytics({
-
-      classId:
-        classId || undefined,
-
-      className:
-        className || "",
-
-      educator:
-        educator || "",
-
-      exam:
-        exam || "",
-
-      subject:
-        subject || "",
-
-      eventType:
-        "view",
-
-      clickType:
-        undefined
-
-    });
-
-
-    await newView.save();
-
-
-    console.log(
-      "👁️ CARD VIEW SAVED:",
-      className
-    );
-
-
-    res.status(200).json({
-
-      success: true,
-
-      message: "Card view tracked successfully"
-
-    });
-
-
-  } catch (error) {
-
-    console.error(
-      "❌ CARD VIEW ERROR:",
-      error
-    );
-
-
-    res.status(500).json({
-
-      success: false,
-
-      message: "Card view tracking failed"
 
     });
 
