@@ -535,149 +535,61 @@ app.get("/analytics", async (req, res) => {
 // REAL MONGODB DATA
 // ======================================================
 
+// ======================================================
+// 📊 ANALYTICS - DASHBOARD SUMMARY
+// ======================================================
+
 app.get("/analytics/summary", async (req, res) => {
 
   try {
 
     // ==================================================
-    // 1️⃣ TOTAL CARD VIEWS
+    // 1️⃣ MOST CLICKED CLASSES
     // ==================================================
 
-    const totalCardViews =
-      await Analytics.countDocuments({
-        eventType: "view"
-      });
+    const mostClickedClasses =
+      await Analytics.aggregate([
 
-
-    // ==================================================
-    // 2️⃣ TOTAL LINK CLICKS
-    // ==================================================
-
-    const totalLinkClicks =
-      await Analytics.countDocuments({
-        eventType: "click"
-      });
-
-
-    // ==================================================
-    // 3️⃣ CTR
-    // CTR = Link Clicks / Card Views × 100
-    // ==================================================
-
-    let ctr = 0;
-
-    if (totalCardViews > 0) {
-
-      ctr =
-        (totalLinkClicks / totalCardViews) * 100;
-
-    }
-
-
-    ctr = Number(ctr.toFixed(2));
-
-
-// ==========================================
-// 1️⃣ CLASS-WISE VIEWS + CLICKS + CTR
-// ==========================================
-
-const classAnalytics =
-  await Analytics.aggregate([
-
-    {
-      $match: {
-        className: {
-          $ne: ""
-        }
-      }
-    },
-
-    {
-      $group: {
-        _id: {
-          className: "$className",
-          educator: "$educator",
-          exam: "$exam",
-          subject: "$subject"
-        },
-
-        views: {
-          $sum: {
-            $cond: [
-              {
-                $eq: ["$eventType", "view"]
-              },
-              1,
-              0
-            ]
+        {
+          $match: {
+            className: {
+              $ne: ""
+            }
           }
         },
 
-        clicks: {
-          $sum: {
-            $cond: [
-              {
-                $eq: ["$eventType", "click"]
-              },
-              1,
-              0
-            ]
+        {
+          $group: {
+
+            _id: {
+              className: "$className",
+              educator: "$educator",
+              exam: "$exam",
+              subject: "$subject"
+            },
+
+            clicks: {
+              $sum: 1
+            }
+
           }
+        },
+
+        {
+          $sort: {
+            clicks: -1
+          }
+        },
+
+        {
+          $limit: 10
         }
 
-      }
-
-    },
-
-    {
-      $addFields: {
-
-        ctr: {
-
-          $cond: [
-
-            {
-              $gt: ["$views", 0]
-            },
-
-            {
-              $multiply: [
-                {
-                  $divide: [
-                    "$clicks",
-                    "$views"
-                  ]
-                },
-                100
-              ]
-            },
-
-            0
-
-          ]
-
-        }
-
-      }
-
-    },
-
-    {
-      $sort: {
-        clicks: -1,
-        views: -1
-      }
-    },
-
-    {
-      $limit: 10
-    }
-
-  ]);
+      ]);
 
 
     // ==================================================
-    // 5️⃣ CLICKS BY EXAM
+    // 2️⃣ CLICKS BY EXAM
     // ==================================================
 
     const clicksByExam =
@@ -686,11 +598,11 @@ const classAnalytics =
         {
           $match: {
 
-            eventType: "click",
-
             exam: {
               $ne: ""
-            }
+            },
+
+            eventType: "click"
 
           }
         },
@@ -717,7 +629,7 @@ const classAnalytics =
 
 
     // ==================================================
-    // 6️⃣ CLICKS BY SUBJECT
+    // 3️⃣ CLICKS BY SUBJECT
     // ==================================================
 
     const clicksBySubject =
@@ -726,11 +638,11 @@ const classAnalytics =
         {
           $match: {
 
-            eventType: "click",
-
             subject: {
               $ne: ""
-            }
+            },
+
+            eventType: "click"
 
           }
         },
@@ -751,45 +663,229 @@ const classAnalytics =
           $sort: {
             clicks: -1
           }
-
         }
 
       ]);
 
 
     // ==================================================
-    // 7️⃣ RESPONSE
+    // 4️⃣ TOTAL CARD VIEWS
+    // ==================================================
+
+    const totalCardViews =
+      await Analytics.countDocuments({
+
+        eventType: "card_view"
+
+      });
+
+
+    // ==================================================
+    // 5️⃣ TOTAL LINK CLICKS
+    // ==================================================
+
+    const totalLinkClicks =
+      await Analytics.countDocuments({
+
+        eventType: "click"
+
+      });
+
+
+    // ==================================================
+    // 6️⃣ CTR
+    // ==================================================
+
+    const ctr =
+      totalCardViews > 0
+        ? Number(
+            (
+              (totalLinkClicks / totalCardViews) *
+              100
+            ).toFixed(2)
+          )
+        : 0;
+
+
+    // ==================================================
+    // 7️⃣ VIEWS VS CLICKS OVER TIME
+    // DAILY MONGODB AGGREGATION
+    // ==================================================
+
+    const dailyAnalytics =
+      await Analytics.aggregate([
+
+        // ----------------------------------------------
+        // DATE FORMAT
+        // ----------------------------------------------
+
+        {
+          $group: {
+
+            _id: {
+
+              date: {
+                $dateToString: {
+                  format: "%Y-%m-%d",
+                  date: "$createdAt"
+                }
+              },
+
+              eventType: "$eventType"
+
+            },
+
+            count: {
+              $sum: 1
+            }
+
+          }
+
+        },
+
+
+        // ----------------------------------------------
+        // SORT DATE
+        // ----------------------------------------------
+
+        {
+          $sort: {
+            "_id.date": 1
+          }
+        }
+
+      ]);
+
+
+    // ==================================================
+    // 8️⃣ CONVERT DAILY DATA
+    // INTO:
+    //
+    // {
+    //   date,
+    //   views,
+    //   clicks
+    // }
+    // ==================================================
+
+    const dailyMap = {};
+
+
+    dailyAnalytics.forEach(item => {
+
+      const date =
+        item._id.date;
+
+
+      const eventType =
+        item._id.eventType;
+
+
+      if (!dailyMap[date]) {
+
+        dailyMap[date] = {
+
+          date: date,
+
+          views: 0,
+
+          clicks: 0
+
+        };
+
+      }
+
+
+      // CARD VIEW
+      if (
+        eventType === "card_view"
+      ) {
+
+        dailyMap[date].views +=
+          item.count;
+
+      }
+
+
+      // LINK CLICK
+      if (
+        eventType === "click"
+      ) {
+
+        dailyMap[date].clicks +=
+          item.count;
+
+      }
+
+    });
+
+
+    // ==================================================
+    // 9️⃣ ARRAY + SORT
+    // ==================================================
+
+    const dailyAnalyticsFormatted =
+      Object.values(dailyMap)
+        .sort(
+          (a, b) =>
+            a.date.localeCompare(b.date)
+        );
+
+
+    // ==================================================
+    // 🔟 TOTAL CLICKS
+    // OLD COMPATIBILITY
+    // ==================================================
+
+    const totalClicks =
+      totalLinkClicks;
+
+
+    // ==================================================
+    // 📤 FINAL RESPONSE
     // ==================================================
 
     res.json({
 
       success: true,
 
-      totalCardViews:
 
-        totalCardViews,
+      // ----------------------------------------------
+      // OLD / EXISTING
+      // ----------------------------------------------
 
-      totalLinkClicks:
+      totalClicks,
 
-        totalLinkClicks,
 
-      ctr:
+      // ----------------------------------------------
+      // REAL STAT CARDS
+      // ----------------------------------------------
 
-        ctr,
+      totalCardViews,
 
-      // Existing analytics
+      totalLinkClicks,
 
-      mostClickedClasses:
+      ctr,
 
-      classAnalytics,
 
-      clicksByExam:
+      // ----------------------------------------------
+      // EXISTING ANALYTICS
+      // ----------------------------------------------
 
-        clicksByExam,
+      mostClickedClasses,
 
-      clicksBySubject:
+      clicksByExam,
 
-        clicksBySubject
+      clicksBySubject,
+
+
+      // ----------------------------------------------
+      // NEW
+      // VIEWS VS CLICKS OVER TIME
+      // ----------------------------------------------
+
+      dailyAnalytics:
+        dailyAnalyticsFormatted
 
     });
 
@@ -817,7 +913,6 @@ const classAnalytics =
   }
 
 });
-
 
 
 // ======================================================
