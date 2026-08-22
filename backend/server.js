@@ -552,10 +552,13 @@ app.get("/analytics/summary", async (req, res) => {
 
         {
           $match: {
+
             className: {
               $ne: ""
             },
+
             eventType: "click"
+
           }
         },
 
@@ -563,10 +566,15 @@ app.get("/analytics/summary", async (req, res) => {
           $group: {
 
             _id: {
+
               className: "$className",
+
               educator: "$educator",
+
               exam: "$exam",
+
               subject: "$subject"
+
             },
 
             clicks: {
@@ -672,7 +680,7 @@ app.get("/analytics/summary", async (req, res) => {
     // ==================================================
     // 4️⃣ TOTAL CARD VIEWS
     // IMPORTANT:
-    // /analytics/view मध्ये eventType = "view"
+    // Card View मध्ये eventType = "view"
     // ==================================================
 
     const totalCardViews =
@@ -701,12 +709,15 @@ app.get("/analytics/summary", async (req, res) => {
 
     const ctr =
       totalCardViews > 0
+
         ? Number(
+
             (
-              (totalLinkClicks / totalCardViews) *
-              100
+              (totalLinkClicks / totalCardViews) * 100
             ).toFixed(2)
+
           )
+
         : 0;
 
 
@@ -724,6 +735,7 @@ app.get("/analytics/summary", async (req, res) => {
             _id: {
 
               date: {
+
                 $dateToString: {
 
                   format: "%Y-%m-%d",
@@ -757,155 +769,15 @@ app.get("/analytics/summary", async (req, res) => {
 
       ]);
 
-// ======================================================
-// 📊 CLASS-WISE VIEWS + CLICKS + CTR
-// ======================================================
-
-const classAnalytics =
-  await Analytics.aggregate([
-
-    // ------------------------------------------
-    // GROUP BY CLASS + EVENT TYPE
-    // ------------------------------------------
-
-    {
-      $group: {
-
-        _id: {
-          classId: "$classId",
-          className: "$className",
-          educator: "$educator",
-          eventType: "$eventType"
-        },
-
-        count: {
-          $sum: 1
-        }
-
-      }
-    },
-
-
-    // ------------------------------------------
-    // GROUP AGAIN BY CLASS
-    // ------------------------------------------
-
-    {
-      $group: {
-
-        _id: {
-          classId: "$_id.classId",
-          className: "$_id.className",
-          educator: "$_id.educator"
-        },
-
-        views: {
-          $sum: {
-            $cond: [
-              {
-                $eq: [
-                  "$_id.eventType",
-                  "card_view"
-                ]
-              },
-              "$count",
-              0
-            ]
-          }
-        },
-
-        clicks: {
-          $sum: {
-            $cond: [
-              {
-                $eq: [
-                  "$_id.eventType",
-                  "click"
-                ]
-              },
-              "$count",
-              0
-            ]
-          }
-        }
-
-      }
-
-    },
-
-
-    // ------------------------------------------
-    // CTR
-    // ------------------------------------------
-
-    {
-      $addFields: {
-
-        ctr: {
-
-          $cond: [
-
-            {
-              $gt: [
-                "$views",
-                0
-              ]
-            },
-
-            {
-              $round: [
-
-                {
-                  $multiply: [
-
-                    {
-                      $divide: [
-                        "$clicks",
-                        "$views"
-                      ]
-                    },
-
-                    100
-
-                  ]
-
-                },
-
-                2
-
-              ]
-
-            },
-
-            0
-
-          ]
-
-        }
-
-      }
-
-    },
-
-
-    // ------------------------------------------
-    // MOST VIEWED / CLICKED FIRST
-    // ------------------------------------------
-
-    {
-      $sort: {
-
-        views: -1,
-        clicks: -1
-
-      }
-
-    }
-
-  ]);
 
     // ==================================================
     // 8️⃣ CONVERT DAILY DATA
+    //
+    // {
+    //   date,
+    //   views,
+    //   clicks
+    // }
     // ==================================================
 
     const dailyMap = {};
@@ -938,7 +810,6 @@ const classAnalytics =
 
       // ==============================================
       // 👁️ CARD VIEWS
-      // IMPORTANT: eventType = "view"
       // ==============================================
 
       if (
@@ -952,7 +823,7 @@ const classAnalytics =
 
 
       // ==============================================
-      // 🔗 LINK CLICKS
+      // 🖱️ LINK CLICKS
       // ==============================================
 
       if (
@@ -968,19 +839,220 @@ const classAnalytics =
 
 
     // ==================================================
-    // 9️⃣ ARRAY + SORT
+    // 9️⃣ DAILY ARRAY + SORT
     // ==================================================
 
     const dailyAnalyticsFormatted =
       Object.values(dailyMap)
         .sort(
+
           (a, b) =>
             a.date.localeCompare(b.date)
+
         );
 
 
     // ==================================================
-    // 🔟 TOTAL CLICKS
+    // 🔟 CLASS-WISE VIEWS + CLICKS + CTR
+    // ==================================================
+
+    const classAnalytics =
+      await Analytics.aggregate([
+
+        // ----------------------------------------------
+        // GROUP BY CLASS + EVENT TYPE
+        // ----------------------------------------------
+
+        {
+          $group: {
+
+            _id: {
+
+              classId: "$classId",
+
+              className: "$className",
+
+              educator: "$educator",
+
+              eventType: "$eventType"
+
+            },
+
+            count: {
+              $sum: 1
+            }
+
+          }
+
+        },
+
+
+        // ----------------------------------------------
+        // GROUP AGAIN BY CLASS
+        // ----------------------------------------------
+
+        {
+          $group: {
+
+            _id: {
+
+              classId: "$_id.classId",
+
+              className: "$_id.className",
+
+              educator: "$_id.educator"
+
+            },
+
+
+            // 👁️ VIEWS
+            views: {
+
+              $sum: {
+
+                $cond: [
+
+                  {
+                    $eq: [
+
+                      "$_id.eventType",
+
+                      "view"
+
+                    ]
+
+                  },
+
+                  "$count",
+
+                  0
+
+                ]
+
+              }
+
+            },
+
+
+            // 🖱️ CLICKS
+            clicks: {
+
+              $sum: {
+
+                $cond: [
+
+                  {
+                    $eq: [
+
+                      "$_id.eventType",
+
+                      "click"
+
+                    ]
+
+                  },
+
+                  "$count",
+
+                  0
+
+                ]
+
+              }
+
+            }
+
+          }
+
+        },
+
+
+        // ----------------------------------------------
+        // 📈 CTR
+        // ----------------------------------------------
+
+        {
+          $addFields: {
+
+            ctr: {
+
+              $cond: [
+
+                {
+                  $gt: [
+
+                    "$views",
+
+                    0
+
+                  ]
+
+                },
+
+                {
+
+                  $round: [
+
+                    {
+
+                      $multiply: [
+
+                        {
+
+                          $divide: [
+
+                            "$clicks",
+
+                            "$views"
+
+                          ]
+
+                        },
+
+                        100
+
+                      ]
+
+                    },
+
+                    2
+
+                  ]
+
+                },
+
+                0
+
+              ]
+
+            }
+
+          }
+
+        },
+
+
+        // ----------------------------------------------
+        // SORT
+        // MOST VIEWED FIRST
+        // ----------------------------------------------
+
+        {
+          $sort: {
+
+            views: -1,
+
+            clicks: -1
+
+          }
+
+        }
+
+      ]);
+
+
+    // ==================================================
+    // 1️⃣1️⃣ TOTAL CLICKS
     // OLD COMPATIBILITY
     // ==================================================
 
@@ -996,7 +1068,17 @@ const classAnalytics =
 
       success: true,
 
+
+      // ----------------------------------------------
+      // OLD
+      // ----------------------------------------------
+
       totalClicks,
+
+
+      // ----------------------------------------------
+      // REAL STAT CARDS
+      // ----------------------------------------------
 
       totalCardViews,
 
@@ -1004,14 +1086,41 @@ const classAnalytics =
 
       ctr,
 
+
+      // ----------------------------------------------
+      // MOST CLICKED CLASSES
+      // ----------------------------------------------
+
       mostClickedClasses,
+
+
+      // ----------------------------------------------
+      // CLICKS BY EXAM
+      // ----------------------------------------------
 
       clicksByExam,
 
+
+      // ----------------------------------------------
+      // CLICKS BY SUBJECT
+      // ----------------------------------------------
+
       clicksBySubject,
 
+
+      // ----------------------------------------------
+      // VIEWS VS CLICKS OVER TIME
+      // ----------------------------------------------
+
       dailyAnalytics:
-        dailyAnalyticsFormatted
+        dailyAnalyticsFormatted,
+
+
+      // ----------------------------------------------
+      // 🔥 CLASS-WISE REAL ANALYTICS
+      // ----------------------------------------------
+
+      classAnalytics
 
     });
 
@@ -1024,7 +1133,7 @@ const classAnalytics =
     );
 
 
-    res.status(500).json({
+    res.status(500, {
 
       success: false,
 
