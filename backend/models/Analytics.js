@@ -35,7 +35,7 @@ const analyticsSchema = new mongoose.Schema({
     // view = card view
     eventType: {
         type: String,
-        enum: ["click", "view"],
+        enum: ["click", "view", "visitor"],
         default: "click"
     },
 
