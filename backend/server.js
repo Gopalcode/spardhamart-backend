@@ -525,10 +525,132 @@ app.get("/analytics", async (req, res) => {
 
 });
 
+// ======================================================
+// 👤 ANALYTICS - SAVE UNIQUE VISITOR
+// ======================================================
 
-// ======================================================
-// 📊 ANALYTICS - DASHBOARD SUMMARY
-// ======================================================
+app.post("/analytics/visitor", async (req, res) => {
+
+  try {
+
+    const {
+      visitorId
+    } = req.body;
+
+
+    // ==========================================
+    // BASIC VALIDATION
+    // ==========================================
+
+    if (!visitorId) {
+
+      return res.status(400).json({
+
+        success: false,
+
+        message: "visitorId is required"
+
+      });
+
+    }
+
+
+    // ==========================================
+    // CHECK IF VISITOR ALREADY EXISTS
+    // ==========================================
+
+    const existingVisitor =
+      await Analytics.findOne({
+
+        visitorId: visitorId,
+
+        eventType: "visitor"
+
+      });
+
+
+    // ==========================================
+    // ALREADY VISITED
+    // ==========================================
+
+    if (existingVisitor) {
+
+      return res.status(200).json({
+
+        success: true,
+
+        newVisitor: false,
+
+        message: "Visitor already tracked"
+
+      });
+
+    }
+
+
+    // ==========================================
+    // SAVE NEW VISITOR
+    // ==========================================
+
+    const newVisitor =
+      new Analytics({
+
+        visitorId:
+          visitorId,
+
+        eventType:
+          "visitor",
+
+        clickType:
+          "visitor"
+
+      });
+
+
+    await newVisitor.save();
+
+
+    console.log(
+      "👤 NEW VISITOR SAVED:",
+      visitorId
+    );
+
+
+    res.status(200).json({
+
+      success: true,
+
+      newVisitor: true,
+
+      message:
+        "Visitor tracked successfully"
+
+    });
+
+
+  } catch (error) {
+
+    console.error(
+      "❌ VISITOR TRACKING ERROR:",
+      error
+    );
+
+
+    res.status(500).json({
+
+      success: false,
+
+      message:
+        "Visitor tracking failed",
+
+      error:
+        error.message
+
+    });
+
+  }
+
+});
 
 // ======================================================
 // 📊 ANALYTICS - DASHBOARD SUMMARY
@@ -720,7 +842,49 @@ app.get("/analytics/summary", async (req, res) => {
 
         : 0;
 
+    // ==================================================
+    // 👤 TOTAL UNIQUE VISITORS
+    // ==================================================
 
+    const totalVisitorsResult =
+      await Analytics.aggregate([
+
+        {
+          $match: {
+
+            eventType: "visitor",
+
+            visitorId: {
+              $ne: ""
+            }
+
+          }
+
+        },
+
+        {
+          $group: {
+
+            _id: "$visitorId"
+
+          }
+
+        },
+
+        {
+          $count: "total"
+
+        }
+
+      ]);
+
+
+    const totalVisitors =
+      totalVisitorsResult.length > 0
+        ? totalVisitorsResult[0].total
+        : 0;
+
+        
     // ==================================================
     // 7️⃣ VIEWS VS CLICKS OVER TIME
     // DAILY MONGODB AGGREGATION
@@ -1067,61 +1231,28 @@ app.get("/analytics/summary", async (req, res) => {
     res.json({
 
       success: true,
-
-
-      // ----------------------------------------------
-      // OLD
-      // ----------------------------------------------
-
+    
+      totalVisitors,
+    
       totalClicks,
-
-
-      // ----------------------------------------------
-      // REAL STAT CARDS
-      // ----------------------------------------------
-
+    
       totalCardViews,
-
+    
       totalLinkClicks,
-
+    
       ctr,
-
-
-      // ----------------------------------------------
-      // MOST CLICKED CLASSES
-      // ----------------------------------------------
-
+    
       mostClickedClasses,
-
-
-      // ----------------------------------------------
-      // CLICKS BY EXAM
-      // ----------------------------------------------
-
+    
       clicksByExam,
-
-
-      // ----------------------------------------------
-      // CLICKS BY SUBJECT
-      // ----------------------------------------------
-
+    
       clicksBySubject,
-
-
-      // ----------------------------------------------
-      // VIEWS VS CLICKS OVER TIME
-      // ----------------------------------------------
-
+    
       dailyAnalytics:
         dailyAnalyticsFormatted,
-
-
-      // ----------------------------------------------
-      // 🔥 CLASS-WISE REAL ANALYTICS
-      // ----------------------------------------------
-
+    
       classAnalytics
-
+    
     });
 
 
