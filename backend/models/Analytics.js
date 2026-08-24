@@ -46,6 +46,11 @@ const analyticsSchema = new mongoose.Schema({
         required: false
     },
 
+    visitorId: {
+        type: String,
+        default: ""
+    },
+
     // Click कधी झाला
     createdAt: {
         type: Date,
