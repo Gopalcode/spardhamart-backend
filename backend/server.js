@@ -591,7 +591,7 @@ app.get("/analytics/summary", async (req, res) => {
         },
 
         {
-          $limit: 10
+          $limit: 50
         }
 
       ]);
