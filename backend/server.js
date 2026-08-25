@@ -884,6 +884,226 @@ app.get("/analytics/summary", async (req, res) => {
         ? totalVisitorsResult[0].total
         : 0;
 
+// ==================================================
+// 👤 UNIQUE VISITORS - TODAY / WEEK / MONTH
+// ==================================================
+
+const now = new Date();
+
+
+// 🇮🇳 India local date
+const indiaDate =
+  new Intl.DateTimeFormat(
+    "en-CA",
+    {
+      timeZone: "Asia/Kolkata"
+    }
+  ).format(now);
+
+
+// YYYY-MM-DD
+const [year, month, day] =
+  indiaDate.split("-").map(Number);
+
+
+// Today start/end in India
+const todayStart =
+  new Date(
+    `${indiaDate}T00:00:00+05:30`
+  );
+
+
+const todayEnd =
+  new Date(
+    `${indiaDate}T23:59:59.999+05:30`
+  );
+
+
+// ==================================================
+// 👤 TODAY
+// ==================================================
+
+const todayVisitors =
+  await Analytics.aggregate([
+
+    {
+      $match: {
+
+        eventType: "visitor",
+
+        visitorId: {
+          $exists: true,
+          $ne: ""
+        },
+
+        createdAt: {
+          $gte: todayStart,
+          $lte: todayEnd
+        }
+
+      }
+    },
+
+    {
+      $group: {
+        _id: "$visitorId"
+      }
+    },
+
+    {
+      $count: "total"
+    }
+
+  ]);
+
+
+const uniqueVisitorsToday =
+  todayVisitors.length
+    ? todayVisitors[0].total
+    : 0;
+
+
+// ==================================================
+// 📅 THIS MONTH
+// ==================================================
+
+const monthStart =
+  new Date(
+    `${year}-${String(month).padStart(2, "0")}-01T00:00:00+05:30`
+  );
+
+
+const nextMonth =
+  month === 12
+    ? `${year + 1}-01`
+    : `${year}-${String(month + 1).padStart(2, "0")}`;
+
+
+const monthEnd =
+  new Date(
+    `${nextMonth}-01T00:00:00+05:30`
+  );
+
+
+const monthVisitors =
+  await Analytics.aggregate([
+
+    {
+      $match: {
+
+        eventType: "visitor",
+
+        visitorId: {
+          $exists: true,
+          $ne: ""
+        },
+
+        createdAt: {
+          $gte: monthStart,
+          $lt: monthEnd
+        }
+
+      }
+    },
+
+    {
+      $group: {
+        _id: "$visitorId"
+      }
+    },
+
+    {
+      $count: "total"
+    }
+
+  ]);
+
+
+const uniqueVisitorsMonth =
+  monthVisitors.length
+    ? monthVisitors[0].total
+    : 0;
+
+
+// ==================================================
+// 📅 THIS WEEK
+// Monday → Sunday
+// ==================================================
+
+const currentDay =
+  new Date(
+    `${indiaDate}T12:00:00+05:30`
+  );
+
+
+const dayOfWeek =
+  currentDay.getDay();
+
+
+const mondayOffset =
+  dayOfWeek === 0
+    ? 6
+    : dayOfWeek - 1;
+
+
+const weekStart =
+  new Date(currentDay);
+
+weekStart.setDate(
+  currentDay.getDate() - mondayOffset
+);
+
+weekStart.setHours(
+  0, 0, 0, 0
+);
+
+
+const weekEnd =
+  new Date(weekStart);
+
+weekEnd.setDate(
+  weekStart.getDate() + 7
+);
+
+
+const weekVisitors =
+  await Analytics.aggregate([
+
+    {
+      $match: {
+
+        eventType: "visitor",
+
+        visitorId: {
+          $exists: true,
+          $ne: ""
+        },
+
+        createdAt: {
+          $gte: weekStart,
+          $lt: weekEnd
+        }
+
+      }
+    },
+
+    {
+      $group: {
+        _id: "$visitorId"
+      }
+    },
+
+    {
+      $count: "total"
+    }
+
+  ]);
+
+
+const uniqueVisitorsWeek =
+  weekVisitors.length
+    ? weekVisitors[0].total
+    : 0;
         
     // ==================================================
     // 7️⃣ VIEWS VS CLICKS OVER TIME
@@ -1233,6 +1453,12 @@ app.get("/analytics/summary", async (req, res) => {
       success: true,
     
       totalVisitors,
+    
+      uniqueVisitorsToday,
+    
+      uniqueVisitorsWeek,
+    
+      uniqueVisitorsMonth,
     
       totalClicks,
     
