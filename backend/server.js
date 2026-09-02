@@ -6,6 +6,7 @@ const Class = require("./models/Class");
 const TestModel = require("./models/Test");
 const BookModel = require("./models/Book");
 const Analytics = require("./models/Analytics");
+const Offer = require("./models/offer");
 const app = express();
 
 app.use(cors());
@@ -1499,6 +1500,244 @@ const uniqueVisitorsWeek =
 
       error:
         error.message
+
+    });
+
+  }
+
+});
+
+// ======================================================
+// 🎁 OFFERS - ADD
+// ======================================================
+
+app.post("/addOffer", async (req, res) => {
+
+  try {
+
+    const {
+      offerTitle,
+      festival,
+      discount,
+      couponCode,
+      description,
+      validFrom,
+      validTill,
+      applicableTo,
+      products,
+      active
+    } = req.body;
+
+
+    if (!offerTitle) {
+      return res.status(400).json({
+        success: false,
+        message: "Offer title is required"
+      });
+    }
+
+
+    const newOffer = new Offer({
+
+      offerTitle,
+      festival,
+      discount,
+      couponCode,
+      description,
+
+      validFrom,
+      validTill,
+
+      applicableTo,
+
+      products: products || [],
+
+      active:
+        active === true ||
+        active === "true"
+
+    });
+
+
+    await newOffer.save();
+
+
+    res.status(200).json({
+
+      success: true,
+
+      message: "Offer saved successfully",
+
+      data: newOffer
+
+    });
+
+
+  } catch (error) {
+
+    console.error("❌ ADD OFFER ERROR:", error);
+
+    res.status(500).json({
+
+      success: false,
+
+      message: "Error saving offer",
+
+      error: error.message
+
+    });
+
+  }
+
+});
+
+// ======================================================
+// 🎁 OFFERS - GET
+// ======================================================
+
+app.get("/getOffers", async (req, res) => {
+
+  try {
+
+    const offers = await Offer
+      .find()
+      .sort({ createdAt: -1 });
+
+
+    res.json(offers);
+
+
+  } catch (error) {
+
+    console.error("❌ GET OFFERS ERROR:", error);
+
+    res.status(500).json({
+
+      success: false,
+
+      message: "Error fetching offers",
+
+      error: error.message
+
+    });
+
+  }
+
+});
+
+// ======================================================
+// 🎁 OFFERS - UPDATE
+// ======================================================
+
+app.put("/updateOffer/:id", async (req, res) => {
+
+  try {
+
+    const updatedOffer =
+      await Offer.findByIdAndUpdate(
+
+        req.params.id,
+
+        {
+          offerTitle: req.body.offerTitle,
+          festival: req.body.festival,
+          discount: req.body.discount,
+          couponCode: req.body.couponCode,
+          description: req.body.description,
+
+          validFrom: req.body.validFrom,
+          validTill: req.body.validTill,
+
+          applicableTo: req.body.applicableTo,
+
+          products:
+            req.body.products || [],
+
+          active:
+            req.body.active === true ||
+            req.body.active === "true"
+        },
+
+        {
+          new: true
+        }
+
+      );
+
+
+    if (!updatedOffer) {
+
+      return res.status(404).json({
+
+        success: false,
+
+        message: "Offer not found"
+
+      });
+
+    }
+
+
+    res.json({
+
+      success: true,
+
+      message: "Offer updated successfully",
+
+      data: updatedOffer
+
+    });
+
+
+  } catch (error) {
+
+    console.error("❌ UPDATE OFFER ERROR:", error);
+
+    res.status(500).json({
+
+      success: false,
+
+      message: "Error updating offer",
+
+      error: error.message
+
+    });
+
+  }
+
+});
+
+// ======================================================
+// 🎁 OFFERS - DELETE
+// ======================================================
+
+app.delete("/deleteOffer/:id", async (req, res) => {
+
+  try {
+
+    await Offer.findByIdAndDelete(req.params.id);
+
+
+    res.json({
+
+      success: true,
+
+      message: "Offer deleted successfully"
+
+    });
+
+
+  } catch (error) {
+
+    console.error("❌ DELETE OFFER ERROR:", error);
+
+    res.status(500).json({
+
+      success: false,
+
+      message: "Error deleting offer",
+
+      error: error.message
 
     });
 
