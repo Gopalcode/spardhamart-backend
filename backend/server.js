@@ -174,102 +174,54 @@ app.get("/getBooks", async (req, res) => {
 });
 
 // ======================================================
-// ANALYTICS - SAVE CLICK
+// ANALYTICS - SAVE CARD VIEW
 // ======================================================
 
-app.post("/analytics/click", async (req, res) => {
+app.post("/analytics/view", async (req, res) => {
 
   try {
 
-      const {
-          classId,
-          className,
-          educator,
-          exam,
-          subject,
-          clickType
-      } = req.body;
+    const {
+      classId,
+      className,
+      educator,
+      exam,
+      subject
+    } = req.body;
 
+    const newView = new Analytics({
 
-      // Basic validation
-      if (!clickType) {
+      classId: classId || undefined,
 
-          return res.status(400).json({
+      className: className || "",
 
-              success: false,
+      educator: educator || "",
 
-              message: "clickType is required"
+      exam: exam || "",
 
-          });
+      subject: subject || "",
 
-      }
+      eventType: "view"
 
-
-      // Save analytics
-      const newClick = new Analytics({
-
-        classId:
-            classId || undefined,
-    
-        className:
-            className || "",
-    
-        educator:
-            educator || "",
-    
-        exam:
-            exam || "",
-    
-        subject:
-            subject || "",
-    
-        eventType:
-            "click",
-    
-        clickType:
-            clickType
-    
     });
 
+    await newView.save();
 
-      await newClick.save();
+    res.status(200).json({
+      success: true,
+      message: "Card view tracked successfully"
+    });
 
+  } catch (err) {
 
-      console.log(
-          "📊 CLICK SAVED:",
-          clickType,
-          className
-      );
+    console.log("❌ CARD VIEW ERROR:", err);
 
+    res.status(500).json({
+      success: false,
+      message: "Card view tracking failed",
+      error: err.message
+    });
 
-      res.status(200).json({
-
-          success: true,
-
-          message: "Click tracked successfully"
-
-      });
-
-
-    } catch (error) {
-
-      console.error("=================================");
-      console.error("❌ CARD VIEW ERROR");
-      console.error("MESSAGE:", error.message);
-      console.error("NAME:", error.name);
-      console.error("STACK:", error.stack);
-      console.error("=================================");
-  
-      res.status(500).json({
-  
-          success: false,
-  
-          message: "Card view tracking failed",
-  
-          error: error.message
-  
-      });
-  
   }
 
 });
