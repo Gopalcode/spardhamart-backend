@@ -14,41 +14,41 @@ const app = express();
 // =====================================================
 
 function extractYoutubeVideoId(url) {
-
   if (!url) return "";
 
   url = url.trim();
 
-  // Already ID
-  if (
-      /^[a-zA-Z0-9_-]{11}$/.test(url)
-  ) {
+  // Direct 11-character YouTube Video ID
+  if (/^[a-zA-Z0-9_-]{11}$/.test(url)) {
       return url;
   }
 
-  // youtube.com/watch?v=
-  let match = url.match(
-      /[?&]v=([^&#]{11})/
-  );
-
+  // YouTube Watch URL
+  let match = url.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
   if (match) {
       return match[1];
   }
 
-  // youtu.be/
-  match = url.match(
-      /youtu\.be\/([^?&#]{11})/
-  );
-
+  // YouTube Live URL
+  match = url.match(/youtube\.com\/live\/([a-zA-Z0-9_-]{11})/);
   if (match) {
       return match[1];
   }
 
-  // youtube.com/embed/
-  match = url.match(
-      /youtube\.com\/embed\/([^?&#]{11})/
-  );
+  // YouTube Shorts URL
+  match = url.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/);
+  if (match) {
+      return match[1];
+  }
 
+  // youtu.be URL
+  match = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+  if (match) {
+      return match[1];
+  }
+
+  // Embed URL
+  match = url.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/);
   if (match) {
       return match[1];
   }
