@@ -330,6 +330,137 @@ app.put("/updateClass/:id", upload.single("image"), async (req, res) => {
   }
 });
 
+// =====================================================
+// ADMIN: GET ALL CLASSES
+// Includes Draft + Published
+// =====================================================
+
+app.get("/getAdminClasses", async (req, res) => {
+  try {
+
+    const data = await Class.find()
+      .sort({ _id: -1 });
+
+    res.json(data);
+
+  } catch (err) {
+
+    console.log("GET ADMIN CLASSES ERROR:", err);
+
+    res.status(500).json({
+      success: false,
+      message: "Error fetching admin classes"
+    });
+
+  }
+});
+
+
+// =====================================================
+// ADMIN: PUBLISH / DRAFT
+// =====================================================
+
+app.put("/publishClass/:id", async (req, res) => {
+
+  try {
+
+    const status =
+      req.body.status === true ||
+      req.body.status === "true";
+
+    const updated =
+      await Class.findByIdAndUpdate(
+        req.params.id,
+        { status: status },
+        { new: true }
+      );
+
+    if (!updated) {
+
+      return res.status(404).json({
+        success: false,
+        message: "Class not found"
+      });
+
+    }
+
+    res.json({
+      success: true,
+      message: status
+        ? "Class Published"
+        : "Class moved to Draft",
+      data: updated
+    });
+
+  } catch (err) {
+
+    console.log("PUBLISH STATUS ERROR:", err);
+
+    res.status(500).json({
+      success: false,
+      message: "Status update failed",
+      error: err.message
+    });
+
+  }
+
+});
+
+
+// =====================================================
+// ADMIN: DUPLICATE CLASS
+// New copy will be Draft
+// =====================================================
+
+app.post("/duplicateClass/:id", async (req, res) => {
+
+  try {
+
+    const original =
+      await Class.findById(req.params.id).lean();
+
+    if (!original) {
+
+      return res.status(404).json({
+        success: false,
+        message: "Class not found"
+      });
+
+    }
+
+    // Remove MongoDB IDs
+    delete original._id;
+    delete original.__v;
+
+    // Rename copy
+    original.className =
+      `${original.className || "Class"} - Copy`;
+
+    // New copy = Draft
+    original.status = false;
+
+    const duplicate =
+      await Class.create(original);
+
+    res.json({
+      success: true,
+      message: "Class duplicated as Draft",
+      data: duplicate
+    });
+
+  } catch (err) {
+
+    console.log("DUPLICATE CLASS ERROR:", err);
+
+    res.status(500).json({
+      success: false,
+      message: "Duplicate failed",
+      error: err.message
+    });
+
+  }
+
+});
 
 app.put("/updateLink/:id", async (req, res) => {
   const { field, value } = req.body;
