@@ -34,6 +34,10 @@ const classSchema = new mongoose.Schema({
 
   io: String,
 
+  status: {
+      type: Boolean,
+      default: true
+  },
   wb: String
 
 });
