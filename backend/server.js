@@ -9,6 +9,53 @@ const Analytics = require("./models/Analytics");
 const Offer = require("./models/offer");
 const app = express();
 
+// =====================================================
+// 🎥 YOUTUBE VIDEO ID EXTRACTOR
+// =====================================================
+
+function extractYoutubeVideoId(url) {
+
+  if (!url) return "";
+
+  url = url.trim();
+
+  // Already ID
+  if (
+      /^[a-zA-Z0-9_-]{11}$/.test(url)
+  ) {
+      return url;
+  }
+
+  // youtube.com/watch?v=
+  let match = url.match(
+      /[?&]v=([^&#]{11})/
+  );
+
+  if (match) {
+      return match[1];
+  }
+
+  // youtu.be/
+  match = url.match(
+      /youtu\.be\/([^?&#]{11})/
+  );
+
+  if (match) {
+      return match[1];
+  }
+
+  // youtube.com/embed/
+  match = url.match(
+      /youtube\.com\/embed\/([^?&#]{11})/
+  );
+
+  if (match) {
+      return match[1];
+  }
+
+  return "";
+}
+
 app.use(cors());
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
@@ -90,17 +137,15 @@ app.post(
         demoVideo:
           extractYoutubeVideoId(req.body.demoVideo),
 
-        yt: req.body.yt,
-
-        tg: req.body.tg,
-
-        wa: req.body.wa,
-
-        ig: req.body.ig,
-
-        io: req.body.io,
-
-        wb: req.body.wb
+          yt: req.body.yt,
+          tg: req.body.tg,
+          wa: req.body.wa,
+          ig: req.body.ig,
+          io: req.body.io,
+          wb: req.body.wb,
+  
+          // Published / Draft
+          status: req.body.status !== "false"
 
       });
 
