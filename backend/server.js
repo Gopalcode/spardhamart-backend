@@ -200,14 +200,64 @@ app.get("/getClasses", async (req, res) => {
   const data = await Class.find();
   res.json(data);
 });
+// ======================================================
+// 🧪 TEST SERIES
+// PUBLIC + ADMIN
+// ======================================================
+
+// ------------------------------------------------------
+// PUBLIC: ONLY PUBLISHED TESTS
+// ------------------------------------------------------
 app.get("/getTests", async (req, res) => {
+
   try {
-    const data = await TestModel.find();
+
+    const data = await TestModel
+      .find({
+        status: { $ne: false }
+      })
+      .sort({ _id: -1 });
+
     res.json(data);
+
   } catch (err) {
-    console.log("🔥 ERROR:", err);
-    res.status(500).json({ message: "Error fetching tests" });
+
+    console.log("🔥 GET TEST ERROR:", err);
+
+    res.status(500).json({
+      message: "Error fetching tests",
+      error: err.message
+    });
+
   }
+
+});
+
+
+// ------------------------------------------------------
+// ADMIN: ALL TESTS INCLUDING DRAFTS
+// ------------------------------------------------------
+app.get("/getAdminTests", async (req, res) => {
+
+  try {
+
+    const data = await TestModel
+      .find()
+      .sort({ _id: -1 });
+
+    res.json(data);
+
+  } catch (err) {
+
+    console.log("🔥 GET ADMIN TEST ERROR:", err);
+
+    res.status(500).json({
+      message: "Error fetching admin tests",
+      error: err.message
+    });
+
+  }
+
 });
 app.get("/getBooks", async (req, res) => {
   try {
@@ -480,35 +530,92 @@ app.put("/updateLink/:id", async (req, res) => {
 //Test
 
 // ✅ ADD TEST
-app.post("/addTest", upload.single("image"), async (req, res) => {
-  try {
+// ======================================================
+// ✅ ADD TEST SERIES
+// ======================================================
 
-    const newTest = new TestModel({
-      className: req.body.className,
-      imgUrl: req.file ? req.file.filename : "",
-      exam: req.body.exam,
-      subject: req.body.subject,
-      appName: req.body.appName,
-      offer: req.body.offer,
-      call: req.body.call,
-      appLink: req.body.appLink,
-      yt: req.body.yt,
-      tg: req.body.tg,
-      wa: req.body.wa,
-      ig: req.body.ig,
-      io: req.body.io,
-      wb: req.body.wb
-    });
+app.post(
+  "/addTest",
+  upload.single("image"),
+  async (req, res) => {
 
-    await newTest.save();
+    try {
 
-    res.json({ message: "Test Saved ✅" });
+      const newTest = new TestModel({
 
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: "Error saving test" });
+        className: req.body.className,
+
+        imgUrl:
+          req.file
+            ? req.file.filename
+            : "",
+
+        exam: req.body.exam,
+
+        subject: req.body.subject,
+
+        appName: req.body.appName,
+
+        offer: req.body.offer,
+
+        call: req.body.call,
+
+        appLink: req.body.appLink,
+
+        yt: req.body.yt,
+
+        tg: req.body.tg,
+
+        wa: req.body.wa,
+
+        ig: req.body.ig,
+
+        io: req.body.io,
+
+        wb: req.body.wb,
+
+        // Draft / Publish
+        status:
+          req.body.status !== "false"
+
+      });
+
+      await newTest.save();
+
+      res.json({
+
+        success: true,
+
+        message:
+          "Test Series Saved Successfully ✅",
+
+        data: newTest
+
+      });
+
+    } catch (err) {
+
+      console.log(
+        "❌ ADD TEST ERROR:",
+        err
+      );
+
+      res.status(500).json({
+
+        success: false,
+
+        message:
+          "Error saving test",
+
+        error:
+          err.message
+
+      });
+
+    }
+
   }
-});
+);
 
 
 // ✅ DELETE TEST
@@ -519,33 +626,310 @@ app.delete("/deleteTest/:id", async (req, res) => {
 
 
 // ✅ UPDATE TEST
-app.put("/updateTest/:id", upload.single("image"), async (req, res) => {
+// ======================================================
+// ✏️ UPDATE TEST SERIES
+// ======================================================
 
-  const updateData = {
-    className: req.body.className,
-    exam: req.body.exam,
-    subject: req.body.subject,
-    appName: req.body.appName,
-    offer: req.body.offer,
-    call: req.body.call,
-    appLink: req.body.appLink,
-    yt: req.body.yt,
-    tg: req.body.tg,
-    wa: req.body.wa,
-    ig: req.body.ig,
-    io: req.body.io,
-    wb: req.body.wb
-  };
+app.put(
+  "/updateTest/:id",
+  upload.single("image"),
+  async (req, res) => {
 
-  if(req.file){
-    updateData.imgUrl = req.file.filename;
+    try {
+
+      const updateData = {
+
+        className:
+          req.body.className,
+
+        exam:
+          req.body.exam,
+
+        subject:
+          req.body.subject,
+
+        appName:
+          req.body.appName,
+
+        offer:
+          req.body.offer,
+
+        call:
+          req.body.call,
+
+        appLink:
+          req.body.appLink,
+
+        yt:
+          req.body.yt,
+
+        tg:
+          req.body.tg,
+
+        wa:
+          req.body.wa,
+
+        ig:
+          req.body.ig,
+
+        io:
+          req.body.io,
+
+        wb:
+          req.body.wb,
+
+        status:
+          req.body.status !== "false"
+
+      };
+
+
+      // ------------------------------------------
+      // NEW IMAGE ONLY IF USER SELECTED ONE
+      // ------------------------------------------
+
+      if (req.file) {
+
+        updateData.imgUrl =
+          req.file.filename;
+
+      }
+
+
+      const updated =
+        await TestModel.findByIdAndUpdate(
+
+          req.params.id,
+
+          updateData,
+
+          {
+            new: true
+          }
+
+        );
+
+
+      if (!updated) {
+
+        return res.status(404).json({
+
+          success: false,
+
+          message:
+            "Test Series not found"
+
+        });
+
+      }
+
+
+      res.json({
+
+        success: true,
+
+        message:
+          "Test Series Updated Successfully ✅",
+
+        data:
+          updated
+
+      });
+
+    } catch (err) {
+
+      console.log(
+        "❌ UPDATE TEST ERROR:",
+        err
+      );
+
+      res.status(500).json({
+
+        success: false,
+
+        message:
+          "Error updating test",
+
+        error:
+          err.message
+
+      });
+
+    }
+
   }
+);
 
-  await TestModel.findByIdAndUpdate(req.params.id, updateData);
+// ======================================================
+// 🚀 PUBLISH / DRAFT TEST
+// ======================================================
 
-  res.json({ message: "Updated ✅" });
-});
+app.put(
+  "/publishTest/:id",
+  async (req, res) => {
 
+    try {
+
+      const status =
+        req.body.status === true ||
+        req.body.status === "true";
+
+
+      const updated =
+        await TestModel.findByIdAndUpdate(
+
+          req.params.id,
+
+          {
+            status: status
+          },
+
+          {
+            new: true
+          }
+
+        );
+
+
+      if (!updated) {
+
+        return res.status(404).json({
+
+          success: false,
+
+          message:
+            "Test Series not found"
+
+        });
+
+      }
+
+
+      res.json({
+
+        success: true,
+
+        message:
+          status
+            ? "Test Published 🚀"
+            : "Test moved to Draft 📝",
+
+        data:
+          updated
+
+      });
+
+    } catch (err) {
+
+      console.log(
+        "❌ TEST STATUS ERROR:",
+        err
+      );
+
+      res.status(500).json({
+
+        success: false,
+
+        message:
+          "Status update failed",
+
+        error:
+          err.message
+
+      });
+
+    }
+
+  }
+);
+
+
+// ======================================================
+// 📋 DUPLICATE TEST AS DRAFT
+// ======================================================
+
+app.post(
+  "/duplicateTest/:id",
+  async (req, res) => {
+
+    try {
+
+      const original =
+        await TestModel
+          .findById(req.params.id)
+          .lean();
+
+
+      if (!original) {
+
+        return res.status(404).json({
+
+          success: false,
+
+          message:
+            "Test Series not found"
+
+        });
+
+      }
+
+
+      // Remove MongoDB IDs
+      delete original._id;
+      delete original.__v;
+
+
+      // Rename duplicate
+      original.className =
+        `${original.className || "Test"} - Copy`;
+
+
+      // IMPORTANT:
+      // Duplicate always starts as Draft
+      original.status = false;
+
+
+      const duplicate =
+        await TestModel.create(
+          original
+        );
+
+
+      res.json({
+
+        success: true,
+
+        message:
+          "Test Series duplicated as Draft 📋",
+
+        data:
+          duplicate
+
+      });
+
+    } catch (err) {
+
+      console.log(
+        "❌ DUPLICATE TEST ERROR:",
+        err
+      );
+
+      res.status(500).json({
+
+        success: false,
+
+        message:
+          "Duplicate failed",
+
+        error:
+          err.message
+
+      });
+
+    }
+
+  }
+);
 
 app.post("/addBook", upload.single("image"), async (req, res) => {
   try {
