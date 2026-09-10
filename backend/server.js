@@ -269,6 +269,45 @@ app.get("/getBooks", async (req, res) => {
 });
 
 // ======================================================
+// 📚 GET ALL BOOKS - ADMIN
+// ======================================================
+
+app.get("/getAdminBooks", async (req, res) => {
+
+  try {
+
+      const data =
+          await BookModel
+              .find()
+              .sort({ _id: -1 });
+
+
+      res.json(data);
+
+  }
+
+  catch (err) {
+
+      console.log(
+          "🔥 GET ADMIN BOOK ERROR:",
+          err
+      );
+
+      res.status(500).json({
+
+          message:
+              "Error fetching admin books",
+
+          error:
+              err.message
+
+      });
+
+  }
+
+});
+
+// ======================================================
 // ANALYTICS - SAVE CARD VIEW
 // ======================================================
 
@@ -961,6 +1000,69 @@ app.post("/addBook", upload.single("image"), async (req, res) => {
     res.status(500).json({ message: "Error saving book" });
   }
 });
+
+// ======================================================
+// 🗑️ DELETE BOOK
+// ======================================================
+
+app.delete(
+  "/deleteBook/:id",
+  async (req, res) => {
+
+      try {
+
+          const deletedBook =
+              await BookModel.findByIdAndDelete(
+                  req.params.id
+              );
+
+
+          if (!deletedBook) {
+
+              return res.status(404).json({
+
+                  message:
+                      "Book not found"
+
+              });
+
+          }
+
+
+          res.json({
+
+              success: true,
+
+              message:
+                  "Book deleted successfully"
+
+          });
+
+      }
+
+      catch (err) {
+
+          console.log(
+              "🔥 DELETE BOOK ERROR:",
+              err
+          );
+
+          res.status(500).json({
+
+              success: false,
+
+              message:
+                  "Error deleting book",
+
+              error:
+                  err.message
+
+          });
+
+      }
+
+  }
+);
 
 // ======================================================
 // ANALYTICS - TOTAL CLICKS
