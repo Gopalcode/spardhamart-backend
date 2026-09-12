@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const upload = require("./multer");
+const cloudinaryUpload = require("./cloudinaryUpload");
 const connectDB = require("./index");
 const Class = require("./models/Class");
 const TestModel = require("./models/Test");
@@ -575,7 +576,7 @@ app.put("/updateLink/:id", async (req, res) => {
 
 app.post(
   "/addTest",
-  upload.single("image"),
+  cloudinaryUpload.single("image"),
   async (req, res) => {
 
     try {
@@ -586,7 +587,7 @@ app.post(
 
         imgUrl:
           req.file
-            ? req.file.filename
+            ? req.file.path
             : "",
 
         exam: req.body.exam,
@@ -622,33 +623,19 @@ app.post(
       await newTest.save();
 
       res.json({
-
         success: true,
-
-        message:
-          "Test Series Saved Successfully ✅",
-
+        message: "Test Series Saved Successfully ✅",
         data: newTest
-
       });
 
     } catch (err) {
 
-      console.log(
-        "❌ ADD TEST ERROR:",
-        err
-      );
+      console.log("❌ ADD TEST ERROR:", err);
 
       res.status(500).json({
-
         success: false,
-
-        message:
-          "Error saving test",
-
-        error:
-          err.message
-
+        message: "Error saving test",
+        error: err.message
       });
 
     }
