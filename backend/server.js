@@ -614,7 +614,6 @@ app.post(
 
         wb: req.body.wb,
 
-        // Draft / Publish
         status:
           req.body.status !== "false"
 
@@ -656,12 +655,21 @@ app.delete("/deleteTest/:id", async (req, res) => {
 // ✏️ UPDATE TEST SERIES
 // ======================================================
 
+// ======================================================
+// ✏️ UPDATE TEST SERIES
+// ☁️ CLOUDINARY IMAGE UPLOAD
+// ======================================================
+
 app.put(
   "/updateTest/:id",
-  upload.single("image"),
+  cloudinaryUpload.single("image"),
   async (req, res) => {
 
     try {
+
+      // ==================================================
+      // BASIC TEST DATA
+      // ==================================================
 
       const updateData = {
 
@@ -710,17 +718,22 @@ app.put(
       };
 
 
-      // ------------------------------------------
-      // NEW IMAGE ONLY IF USER SELECTED ONE
-      // ------------------------------------------
+      // ==================================================
+      // ☁️ NEW IMAGE
+      // ONLY UPDATE IMAGE IF USER SELECTED ONE
+      // ==================================================
 
       if (req.file) {
 
         updateData.imgUrl =
-          req.file.filename;
+          req.file.path;
 
       }
 
+
+      // ==================================================
+      // UPDATE MONGODB
+      // ==================================================
 
       const updated =
         await TestModel.findByIdAndUpdate(
@@ -736,6 +749,10 @@ app.put(
         );
 
 
+      // ==================================================
+      // TEST NOT FOUND
+      // ==================================================
+
       if (!updated) {
 
         return res.status(404).json({
@@ -750,6 +767,10 @@ app.put(
       }
 
 
+      // ==================================================
+      // SUCCESS
+      // ==================================================
+
       res.json({
 
         success: true,
@@ -762,12 +783,14 @@ app.put(
 
       });
 
+
     } catch (err) {
 
       console.log(
         "❌ UPDATE TEST ERROR:",
         err
       );
+
 
       res.status(500).json({
 
