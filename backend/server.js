@@ -378,6 +378,23 @@ app.delete("/deleteClass/:id", async (req, res) => {
   }
 });
 
+// ======================================================
+// ☁️ CLOUDINARY / MULTER ERROR HANDLER
+// ======================================================
+
+app.use((err, req, res, next) => {
+
+  console.error("❌ GLOBAL SERVER ERROR:");
+  console.error(err);
+
+  res.status(500).json({
+      success: false,
+      message: "Upload / Server Error",
+      error: err.message || "Unknown server error"
+  });
+
+});
+
 // 🚀 START
 connectDB().then(() => {
   app.listen(5000, () => {
