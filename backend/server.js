@@ -687,17 +687,17 @@ app.put(
       if (err) {
 
         console.error(
-          "❌ CLOUDINARY UPDATE UPLOAD ERROR:",
-          err
+            "❌ CLOUDINARY UPDATE UPLOAD ERROR:",
+            err
         );
-
+    
         return res.status(500).json({
-          success: false,
-          message: "Cloudinary image upload failed",
-          error: err.message
+            success: false,
+            message: "Cloudinary image upload failed",
+            error: err.message || String(err)
         });
-
-      }
+    
+    }
 
       next();
 
