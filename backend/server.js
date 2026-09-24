@@ -679,55 +679,63 @@ app.delete("/deleteTest/:id", async (req, res) => {
 
 app.put(
   "/updateTest/:id",
-  cloudinaryUpload.single("image"),
+
+  (req, res, next) => {
+
+    cloudinaryUpload.single("image")(req, res, (err) => {
+
+      if (err) {
+
+        console.error(
+          "❌ CLOUDINARY UPDATE UPLOAD ERROR:",
+          err
+        );
+
+        return res.status(500).json({
+          success: false,
+          message: "Cloudinary image upload failed",
+          error: err.message
+        });
+
+      }
+
+      next();
+
+    });
+
+  },
+
   async (req, res) => {
 
     try {
 
-      // ==================================================
-      // BASIC TEST DATA
-      // ==================================================
-
       const updateData = {
 
-        className:
-          req.body.className,
+        className: req.body.className,
 
-        exam:
-          req.body.exam,
+        exam: req.body.exam,
 
-        subject:
-          req.body.subject,
+        subject: req.body.subject,
 
-        appName:
-          req.body.appName,
+        appName: req.body.appName,
 
-        offer:
-          req.body.offer,
+        offer: req.body.offer,
 
-        call:
-          req.body.call,
+        call: req.body.call,
 
-        appLink:
-          req.body.appLink,
+        appLink: req.body.appLink,
 
-        yt:
-          req.body.yt,
+        yt: req.body.yt,
 
-        tg:
-          req.body.tg,
+        tg: req.body.tg,
 
-        wa:
-          req.body.wa,
+        wa: req.body.wa,
 
-        ig:
-          req.body.ig,
+        ig: req.body.ig,
 
-        io:
-          req.body.io,
+        io: req.body.io,
 
-        wb:
-          req.body.wb,
+        wb: req.body.wb,
 
         status:
           req.body.status !== "false"
@@ -735,28 +743,21 @@ app.put(
       };
 
 
-      // ==================================================
-      // ☁️ NEW IMAGE
-      // ONLY UPDATE IMAGE IF USER SELECTED ONE
-      // ==================================================
+      // ------------------------------------------
+      // NEW CLOUDINARY IMAGE
+      // ------------------------------------------
 
       if (req.file) {
 
-        console.log("📸 FILE DATA:");
-        console.log(req.file);
-    
         updateData.imgUrl =
-            req.file.path;
-    
-        console.log("☁️ IMAGE URL:");
-        console.log(updateData.imgUrl);
-    
-    }
+          req.file.path;
+
+      }
 
 
-      // ==================================================
+      // ------------------------------------------
       // UPDATE MONGODB
-      // ==================================================
+      // ------------------------------------------
 
       const updated =
         await TestModel.findByIdAndUpdate(
@@ -772,10 +773,6 @@ app.put(
         );
 
 
-      // ==================================================
-      // TEST NOT FOUND
-      // ==================================================
-
       if (!updated) {
 
         return res.status(404).json({
@@ -790,9 +787,9 @@ app.put(
       }
 
 
-      // ==================================================
+      // ------------------------------------------
       // SUCCESS
-      // ==================================================
+      // ------------------------------------------
 
       res.json({
 
@@ -809,13 +806,10 @@ app.put(
 
     } catch (err) {
 
-      console.error("❌ UPDATE TEST ERROR:");
-      console.error(err);
-      
-      if (err.stack) {
-          console.error(err.stack);
-      }
-
+      console.error(
+        "❌ UPDATE TEST ERROR:",
+        err
+      );
 
       res.status(500).json({
 
