@@ -742,10 +742,16 @@ app.put(
 
       if (req.file) {
 
+        console.log("📸 FILE DATA:");
+        console.log(req.file);
+    
         updateData.imgUrl =
-          req.file.path;
-
-      }
+            req.file.path;
+    
+        console.log("☁️ IMAGE URL:");
+        console.log(updateData.imgUrl);
+    
+    }
 
 
       // ==================================================
@@ -803,10 +809,12 @@ app.put(
 
     } catch (err) {
 
-      console.log(
-        "❌ UPDATE TEST ERROR:",
-        err
-      );
+      console.error("❌ UPDATE TEST ERROR:");
+      console.error(err);
+      
+      if (err.stack) {
+          console.error(err.stack);
+      }
 
 
       res.status(500).json({
